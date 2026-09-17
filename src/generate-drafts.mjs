@@ -26,10 +26,9 @@ const decodeEntities = (text = "") => text
   .replace(/&#39;|&apos;/gi, "'")
   .replace(/&lt;/gi, "<")
   .replace(/&gt;/gi, ">");
-const clean = (text = "") => decodeEntities(text.replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ")).trim();
+const clean = (text = "") => decodeEntities(text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
 const meta = (key, attribute = "property") => {
-  const escaped = key.replace(/[.*+?^()|[\\]\\\\]/g, "\\\\$&");
-  const pattern = new RegExp("<meta[^>]+" + attribute + "=[\\\"']" + escaped + "[\\\"'][^>]*content=[\\\"']([^\\\"']+)", "i");
+  const pattern = new RegExp("<meta[^>]+" + attribute + "=[\\\"']" + key + "[\\\"'][^>]*content=[\\\"']([^\\\"']+)", "i");
   return clean(html.match(pattern)?.[1] || "");
 };
 const titleTag = clean(html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1] || "");
