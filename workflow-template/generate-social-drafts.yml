@@ -3,22 +3,9 @@ name: Generate X and Threads promotion drafts
 on:
   workflow_dispatch:
     inputs:
-      title:
-        description: "宣伝する記事タイトル"
+      source_url:
+        description: "記事URL（タイトル・要約・正規URL・ハッシュタグを自動抽出）"
         required: true
-        type: string
-      summary:
-        description: "記事の要約"
-        required: true
-        type: string
-      url:
-        description: "記事URL"
-        required: false
-        type: string
-      hashtags:
-        description: "ハッシュタグ（空白区切り）"
-        required: false
-        default: "空冷VW ビートル 旧車"
         type: string
   repository_dispatch:
     types: [social-promotion]
@@ -30,10 +17,7 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     env:
-      PROMO_TITLE: ${{ inputs.title || github.event.client_payload.title || '' }}
-      PROMO_SUMMARY: ${{ inputs.summary || github.event.client_payload.summary || '' }}
-      PROMO_URL: ${{ inputs.url || github.event.client_payload.url || '' }}
-      PROMO_HASHTAGS: ${{ inputs.hashtags || github.event.client_payload.hashtags || '空冷VW ビートル 旧車' }}
+      PROMO_SOURCE_URL: ${{ inputs.source_url || github.event.client_payload.source_url || github.event.client_payload.url || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,12 +25,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Generate drafts
+      - name: Generate drafts from article
         run: npm run generate
       - name: Upload drafts
         uses: actions/upload-artifact@v4
         with:
-          name: social-promotion-drafts-${{ github.run_id }}
+          name: social-promotion-drafts-${{${ github.run_id }}
           path: out/
           if-no-files-found: error
           retention-days: 30
