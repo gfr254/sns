@@ -32,8 +32,8 @@ const clean = (text = "") => decodeEntities(text.replace(/<[^>]+>/g, " ").replac
 const meta = (key, attribute = "property") => {
   const tags = html.match(/<meta\b[^>]*>/gi) || [];
   for (const tag of tags) {
-    const keyMatch = tag.match(new RegExp(attribute + "=[\\"']([^\\"']+)", "i"));
-    const contentMatch = tag.match(/content=[\\"']([^\\"']+)[\\"']/i);
+    const keyMatch = tag.match(new RegExp(attribute + "=[\"']([^\"']+)", "i"));
+    const contentMatch = tag.match(/content=[\"']([^\"']+)[\"']/i);
     if (keyMatch?.[1]?.toLowerCase() === key.toLowerCase() && contentMatch) return clean(contentMatch[1]);
   }
   return "";
