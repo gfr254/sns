@@ -2,11 +2,6 @@ name: Generate X and Threads promotion drafts
 
 on:
   workflow_dispatch:
-    inputs:
-      source_url:
-        description: "記事URL（タイトル・要約・正規URL・ハッシュタグを自動抽出）"
-        required: true
-        type: string
   repository_dispatch:
     types: [social-promotion]
 
@@ -17,7 +12,8 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     env:
-      PROMO_SOURCE_URL: ${{ inputs.source_url || github.event.client_payload.source_url || github.event.client_payload.url || '' }}
+      PROMO_SOURCE_URL: ${{ github.event.client_payload.source_url || github.event.client_payload.url || '' }}
+      PROMO_WORDPRESS_URL: https://kazuhiro-beetle.com
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,7 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Generate drafts from article
+      - name: Find latest WordPress article and generate drafts
         run: npm run generate
       - name: Upload drafts
         uses: actions/upload-artifact@v4
