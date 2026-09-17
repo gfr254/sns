@@ -28,17 +28,17 @@ const decodeEntities = (text = "") => text
   .replace(/&gt;/gi, ">");
 const clean = (text = "") => decodeEntities(text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
 const meta = (key, attribute = "property") => {
-  const pattern = new RegExp("<meta[^>]+" + attribute + "=[\\\"']" + key + "[\\\"'][^>]*content=[\\\"']([^\\\"']+)", "i");
+  const pattern = new RegExp("<meta[^>]+" + attribute + "=[\"']" + key + "[\"'][^>]*content=[\"']([^\"']+)", "i");
   return clean(html.match(pattern)?.[1] || "");
 };
-const titleTag = clean(html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1] || "");
-const heading = clean(html.match(/<h1[^>]*>([\\s\\S]*?)<\\/h1>/i)?.[1] || "");
-const description = meta("description", "name") || meta("og:description") || clean(html.match(/<meta[^>]+name=[\\\"']description[\\\"'][^>]*content=[\\\"']([^\\\"']+)/i)?.[1] || "");
+const titleTag = clean(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "");
+const heading = clean(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || "");
+const description = meta("description", "name") || meta("og:description") || clean(html.match(/<meta[^>]+name=[\\"']description[\\"'][^>]*content=[\\"']([^\\"']+)/i)?.[1] || "");
 const title = meta("og:title") || titleTag || heading || "空冷ワーゲンに関する記事";
-const articleText = clean(html.match(/<article[^>]*>([\\s\\S]*?)<\\/article>/i)?.[1] || html);
-const firstSentence = articleText.split(/(?<=[。！？.!?])\\s+/u)[0] || articleText;
+const articleText = clean(html.match(/<article[^>]*>([\s\S]*?)<\/article>/i)?.[1] || html);
+const firstSentence = articleText.split(/(?<=[。！？.!?])\s+/u)[0] || articleText;
 const summary = description || firstSentence.slice(0, 180) || "空冷ワーゲンに関する記事を紹介します。";
-const canonicalRaw = html.match(/<link[^>]+rel=[\\\"'][^\\\"']*canonical[^\\\"']*[\\\"'][^>]*href=[\\\"']([^\\\"']+)/i)?.[1] || "";
+const canonicalRaw = html.match(/<link[^>]+rel=[\\"'][^\\"']*canonical[^\\"']*[\\"'][^>]*href=[\\"']([^\\"']+)/i)?.[1] || "";
 const finalUrl = new URL(canonicalRaw || sourceUrl, sourceUrl).href;
 
 const tags = [];
@@ -52,11 +52,11 @@ if (/(部品|パーツ|構造|エンジン)/.test(title + " " + articleText)) ad
 addTag("空冷VW");
 
 const tagText = tags.slice(0, 8).map(tag => "#" + tag).join(" ");
-const xPrefix = [title, finalUrl, tagText].filter(Boolean).join("\\n\\n");
+const xPrefix = [title, finalUrl, tagText].filter(Boolean).join("\n\n");
 const remaining = Math.max(40, 280 - Array.from(xPrefix).length - 2);
 const shortSummary = Array.from(summary).slice(0, remaining).join("").trim();
-const xText = [title, shortSummary, finalUrl, tagText].filter(Boolean).join("\\n\\n");
-const threadsText = ["空冷かずひろ", title, summary, finalUrl, tagText].filter(Boolean).join("\\n\\n");
+const xText = [title, shortSummary, finalUrl, tagText].filter(Boolean).join("\n\n");
+const threadsText = ["空冷かずひろ", title, summary, finalUrl, tagText].filter(Boolean).join("\n\n");
 
 const output = {
   generatedAt: new Date().toISOString(),
@@ -66,7 +66,7 @@ const output = {
 };
 
 await mkdir("out", { recursive: true });
-await writeFile("out/social-drafts.json", JSON.stringify(output, null, 2) + "\\n");
-const markdown = ["# SNS宣伝文ドラフト", "", "## 自動抽出情報", "", "- タイトル: " + title, "- 要約: " + summary, "- URL: " + finalUrl, "- ハッシュタグ: " + tagText, "", "## X", "", output.x.text, "", "## Threads", "", output.threads.text, ""].join("\\n");
+await writeFile("out/social-drafts.json", JSON.stringify(output, null, 2) + "\n");
+const markdown = ["# SNS宣伝文ドラフト", "", "## 自動抽出情報", "", "- タイトル: " + title, "- 要約: " + summary, "- URL: " + finalUrl, "- ハッシュタグ: " + tagText, "", "## X", "", output.x.text, "", "## Threads", "", output.threads.text, ""].join("\n");
 await writeFile("out/social-drafts.md", markdown);
 console.log(JSON.stringify({ generated: true, title, url: finalUrl, hashtags: tags.slice(0, 8), xCharacters: output.x.characterCount, threadsCharacters: output.threads.characterCount, files: ["out/social-drafts.json", "out/social-drafts.md"] }));
