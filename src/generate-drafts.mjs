@@ -25,17 +25,25 @@ const decodeEntities = (text = "") => text
   .replace(/&quot;/gi, '"')
   .replace(/&#39;|&apos;/gi, "'")
   .replace(/&lt;/gi, "<")
-  .replace(/&gt;/gi, ">");
+  .replace(/&gt;/gi, ">")
+  .replace(/&#(\\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)));
 const clean = (text = "") => decodeEntities(text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).trim();
 const meta = (key, attribute = "property") => {
-  const pattern = new RegExp("<meta[^>]+" + attribute + "=[\"']" + key + "[\"'][^>]*content=[\"']([^\"']+)", "i");
-  return clean(html.match(pattern)?.[1] || "");
+  const tags = html.match(/<meta\\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    const keyMatch = tag.match(new RegExp(attribute + "=[\\\"']([^\\\"']+)", "i"));
+    const contentMatch = tag.match(/content=[\\\"']([^\\\"']+)[\\\"']/i);
+    if (keyMatch?.[1]?.toLowerCase() === key.toLowerCase() && contentMatch) return clean(contentMatch[1]);
+  }
+  return "";
 };
 const titleTag = clean(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "");
 const heading = clean(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || "");
-const description = meta("description", "name") || meta("og:description") || clean(html.match(/<meta[^>]+name=[\\"']description[\\"'][^>]*content=[\\"']([^\\"']+)/i)?.[1] || "");
+const description = meta("description", "name") || meta("og:description");
 const title = meta("og:title") || titleTag || heading || "空冷ワーゲンに関する記事";
-const articleText = clean(html.match(/<article[^>]*>([\s\S]*?)<\/article>/i)?.[1] || html);
+const visibleHtml = html.replace(/<(script|style|noscript|svg|head)\\b[\\s\\S]*?<\\/\\1>/gi, " ");
+const articleText = clean(visibleHtml.match(/<article[^>]*>([\\s\\S]*?)<\\/article>/i)?.[1] || visibleHtml);
 const firstSentence = articleText.split(/(?<=[。！？.!?])\s+/u)[0] || articleText;
 const summary = description || firstSentence.slice(0, 180) || "空冷ワーゲンに関する記事を紹介します。";
 const canonicalRaw = html.match(/<link[^>]+rel=[\\"'][^\\"']*canonical[^\\"']*[\\"'][^>]*href=[\\"']([^\\"']+)/i)?.[1] || "";
