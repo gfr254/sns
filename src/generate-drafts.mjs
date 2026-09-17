@@ -1,8 +1,19 @@
 import { mkdir, writeFile } from "node:fs/promises";
 
 const value = (name, fallback = "") => process.env[name]?.trim() || fallback;
-const sourceUrl = value("PROMO_SOURCE_URL", value("PROMO_URL"));
-if (!sourceUrl) throw new Error("PROMO_SOURCE_URL is required");
+const configuredSourceUrl = value("PROMO_SOURCE_URL", value("PROMO_URL"));
+const wordpressBaseUrl = value("PROMO_WORDPRESS_URL", "https://kazuhiro-beetle.com");
+const discoverWordPressUrl = async () => {
+  if (configuredSourceUrl) return configuredSourceUrl;
+  const endpoint = new URL("/wp-json/wp/v2/posts?per_page=1&orderby=date&order=desc&_fields=link", wordpressBaseUrl);
+  const latestResponse = await fetch(endpoint, { headers: { "user-agent": "social-promotion-drafts/1.1" } });
+  if (!latestResponse.ok) throw new Error("Could not discover latest WordPress article: HTTP " + latestResponse.status);
+  const posts = await latestResponse.json();
+  const latestUrl = posts?.[0]?.link;
+  if (!latestUrl) throw new Error("No published WordPress article was found");
+  return latestUrl;
+};
+const sourceUrl = await discoverWordPressUrl();
 
 const response = await fetch(sourceUrl, { headers: { "user-agent": "social-promotion-drafts/1.1" } });
 if (!response.ok) throw new Error("Could not fetch article: HTTP " + response.status);
