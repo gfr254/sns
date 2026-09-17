@@ -1,0 +1,12 @@
+{
+  "name": "social-promotion-drafts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node src/generate-drafts.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
