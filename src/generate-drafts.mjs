@@ -67,11 +67,15 @@ const xText = [title, shortSummary, finalUrl, tagText].filter(Boolean).join("\n\
 const threadsText = ["空冷かずひろ", title, summary, finalUrl, tagText].filter(Boolean).join("\n\n");
 
 const truncateForVideo = (text, limit = 110) => {
-  const chars = Array.from(text);
-  if (chars.length <= limit) return text;
-  const clipped = chars.slice(0, limit).join("");
-  const sentenceEnd = Math.max(clipped.lastIndexOf("。"), clipped.lastIndexOf("！"), clipped.lastIndexOf("？"));
-  return sentenceEnd >= Math.floor(limit * 0.55) ? clipped.slice(0, sentenceEnd + 1) : clipped.slice(0, limit - 1) + "…";
+  const sentences = text.match(/[^。！？]+[。！？]?/gu) || [text];
+  let result = "";
+  for (const sentence of sentences) {
+    const candidate = (result + sentence).trim();
+    if (Array.from(candidate).length > limit) break;
+    result = candidate;
+  }
+  if (result) return result;
+  return Array.from(text).slice(0, limit - 1).join("") + "…";
 };
 const shortTitle = Array.from(title).slice(0, 36).join("").trim() + (Array.from(title).length > 36 ? "…" : "");
 const tiktokHook = /用語|意味|購入|販売ページ/.test(title)
@@ -81,7 +85,11 @@ const tiktokHook = /用語|意味|購入|販売ページ/.test(title)
     : /違い|比較/.test(title)
       ? "空冷ビートルの違い、知っていますか？"
       : "空冷ビートルの「" + shortTitle + "」を紹介します。";
-const tiktokSummary = truncateForVideo(summary);
+const quotedTerms = Array.from(articleText.matchAll(/「([^」]{1,28})」/g), match => match[1]);
+const inspectionTerms = ["エンジンコード", "シャシーナンバー"].filter(term => articleText.includes(term));
+const tiktokSummary = /用語|販売ページ/.test(title) && quotedTerms.length
+  ? "販売ページの用語「" + quotedTerms.slice(0, 3).join("」「") + "」を解説。" + (inspectionTerms.length ? inspectionTerms.join("・") + "は年式や仕様を確認する手がかりです。" : "")
+  : truncateForVideo(summary);
 const tiktokHashtags = tags.slice(0, 5);
 const tiktokTagText = tiktokHashtags.map(tag => "#" + tag).join(" ");
 const tiktokScenes = [
