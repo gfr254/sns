@@ -66,6 +66,39 @@ const shortSummary = Array.from(summary).slice(0, remaining).join("").trim();
 const xText = [title, shortSummary, finalUrl, tagText].filter(Boolean).join("\n\n");
 const threadsText = ["空冷かずひろ", title, summary, finalUrl, tagText].filter(Boolean).join("\n\n");
 
+const truncateForVideo = (text, limit = 110) => {
+  const chars = Array.from(text);
+  if (chars.length <= limit) return text;
+  const clipped = chars.slice(0, limit).join("");
+  const sentenceEnd = Math.max(clipped.lastIndexOf("。"), clipped.lastIndexOf("！"), clipped.lastIndexOf("？"));
+  return sentenceEnd >= Math.floor(limit * 0.55) ? clipped.slice(0, sentenceEnd + 1) : clipped.slice(0, limit - 1) + "…";
+};
+const shortTitle = Array.from(title).slice(0, 36).join("").trim() + (Array.from(title).length > 36 ? "…" : "");
+const tiktokHook = /用語|意味|購入|販売ページ/.test(title)
+  ? "販売ページの用語、意味を知っていますか？"
+  : /点検|車検|安全/.test(title)
+    ? "空冷ビートルの安全確認、どこを見ていますか？"
+    : /違い|比較/.test(title)
+      ? "空冷ビートルの違い、知っていますか？"
+      : "空冷ビートルの「" + shortTitle + "」を紹介します。";
+const tiktokSummary = truncateForVideo(summary);
+const tiktokHashtags = tags.slice(0, 5);
+const tiktokTagText = tiktokHashtags.map(tag => "#" + tag).join(" ");
+const tiktokScenes = [
+  { time: "0–3秒", onScreenText: tiktokHook, narration: tiktokHook, visualSuggestion: "記事テーマが伝わる実車・部品・写真、または大きなタイトルテロップ" },
+  { time: "3–18秒", onScreenText: "この記事のポイント", narration: tiktokSummary, visualSuggestion: "記事の内容に沿った実物・資料・テロップを使用" },
+  { time: "18–25秒", onScreenText: "続きはプロフィールへ", narration: "詳しくはプロフィール欄のブログリンクから。", visualSuggestion: "プロフィールへの誘導テロップ" }
+];
+const tiktokCaption = ["空冷かずひろ｜空冷ビートルのある暮らし", title, tiktokSummary, "記事の続きはプロフィール欄のブログリンクへ。", tiktokTagText].filter(Boolean).join("\n\n");
+const tiktokDraft = {
+  generatedAt: new Date().toISOString(),
+  source: { title, url: finalUrl },
+  durationSeconds: 25,
+  scenes: tiktokScenes,
+  caption: tiktokCaption,
+  hashtags: tiktokHashtags
+};
+
 const output = {
   generatedAt: new Date().toISOString(),
   source: { sourceUrl, title, summary, url: finalUrl, hashtags: tags.slice(0, 8) },
@@ -77,4 +110,33 @@ await mkdir("out", { recursive: true });
 await writeFile("out/social-drafts.json", JSON.stringify(output, null, 2) + "\n");
 const markdown = ["# SNS宣伝文ドラフト", "", "## 自動抽出情報", "", "- タイトル: " + title, "- 要約: " + summary, "- URL: " + finalUrl, "- ハッシュタグ: " + tagText, "", "## X", "", output.x.text, "", "## Threads", "", output.threads.text, ""].join("\n");
 await writeFile("out/social-drafts.md", markdown);
-console.log(JSON.stringify({ generated: true, title, url: finalUrl, hashtags: tags.slice(0, 8), xCharacters: output.x.characterCount, threadsCharacters: output.threads.characterCount, files: ["out/social-drafts.json", "out/social-drafts.md"] }));
+const tiktokMarkdown = [
+  "# TikTok動画用下書き",
+  "",
+  "> 下書きです。記事内容・使用素材・プロフィールのリンク先を確認してから手動投稿してください。TikTokへの自動投稿は行いません。",
+  "",
+  "## 元記事",
+  "",
+  "- タイトル: " + title,
+  "- URL: " + finalUrl,
+  "",
+  "## 25秒の構成",
+  "",
+  ...tiktokScenes.flatMap(scene => [
+    "### " + scene.time + "｜" + scene.onScreenText,
+    "- ナレーション: " + scene.narration,
+    "- 映像案: " + scene.visualSuggestion,
+    ""
+  ]),
+  "## キャプション",
+  "",
+  tiktokCaption,
+  "",
+  "## ハッシュタグ",
+  "",
+  tiktokTagText,
+  ""
+].join("\n");
+await writeFile("out/tiktok-draft.json", JSON.stringify(tiktokDraft, null, 2) + "\n");
+await writeFile("out/tiktok-draft.md", tiktokMarkdown);
+console.log(JSON.stringify({ generated: true, title, url: finalUrl, hashtags: tags.slice(0, 8), xCharacters: output.x.characterCount, threadsCharacters: output.threads.characterCount, tiktokDurationSeconds: tiktokDraft.durationSeconds, files: ["out/social-drafts.json", "out/social-drafts.md", "out/tiktok-draft.json", "out/tiktok-draft.md"] }));
